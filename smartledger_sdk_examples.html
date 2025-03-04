@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartLedger SDK Examples</title>
+    <script src="node_modules/smartledger-sdk/dist/smartledger.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .card {
+        background: white;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .input-group {
+        margin: 10px 0;
+      }
+      input,
+      button {
+        padding: 8px;
+        margin: 5px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .output {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>SmartLedger SDK Examples</h1>
+
+    <div class="card">
+      <h2>Encryption/Decryption</h2>
+      <div class="input-group">
+        <input
+          type="text"
+          id="message"
+          placeholder="Enter message"
+          value="Hello SmartLedger!"
+        />
+        <input type="text" id="key" placeholder="Enter key" value="test-key" />
+        <button onclick="testEncryption()">Test Encryption</button>
+      </div>
+      <div class="output" id="encryption-output"></div>
+    </div>
+
+    <div class="card">
+      <h2>BIP39 Mnemonic</h2>
+      <div class="input-group">
+        <button onclick="testMnemonic()">Generate Mnemonic</button>
+      </div>
+      <div class="output" id="mnemonic-output"></div>
+    </div>
+
+    <div class="card">
+      <h2>HD Wallet Derivation</h2>
+      <div class="input-group">
+        <input
+          type="text"
+          id="derivation-path"
+          value="m/44'/236'/0'/0/0"
+          placeholder="Derivation path"
+        />
+        <button onclick="testHDWallet()">Derive Wallet</button>
+      </div>
+      <div class="output" id="hdwallet-output"></div>
+    </div>
+
+    <div class="card">
+      <h2>Hashing</h2>
+      <div class="input-group">
+        <input
+          type="text"
+          id="hash-input"
+          placeholder="Enter data to hash"
+          value="test data"
+        />
+        <select id="hash-algorithm">
+          <option value="SHA256">SHA256</option>
+          <option value="SHA512">SHA512</option>
+        </select>
+        <button onclick="testHashing()">Generate Hash</button>
+      </div>
+      <div class="output" id="hash-output"></div>
+    </div>
+
+    <div class="card">
+      <h2>UUID Generation</h2>
+      <div class="input-group">
+        <input
+          type="text"
+          id="domain"
+          placeholder="Enter domain"
+          value="test.smartledger.solutions"
+        />
+        <button onclick="testUUID()">Generate UUID</button>
+      </div>
+      <div class="output" id="uuid-output"></div>
+    </div>
+
+    <script>
+      const Buffer = SmartLedger.bsv.deps.Buffer;
+      async function testEncryption() {
+        const message = document.getElementById("message").value;
+        const key = document.getElementById("key").value;
+        const encrypted = SmartLedger.encrypt(message, key);
+        const decrypted = SmartLedger.decrypt(encrypted, key);
+
+        document.getElementById(
+          "encryption-output"
+        ).innerHTML = `Original: ${message}<br>
+                Encrypted: ${encrypted}<br>
+                Decrypted: ${decrypted}`;
+      }
+
+      async function testMnemonic() {
+        const mnemonic = SmartLedger.generateMnemonic();
+        const isValid = SmartLedger.validateMnemonic(mnemonic);
+
+        document.getElementById(
+          "mnemonic-output"
+        ).innerHTML = `Generated Mnemonic: ${mnemonic}<br>
+                Mnemonic Valid: ${isValid}`;
+      }
+
+      async function testHDWallet() {
+        const mnemonic = SmartLedger.generateMnemonic();
+        const path = document.getElementById("derivation-path").value;
+        const derived = await SmartLedger.derivePath(mnemonic, path);
+
+        document.getElementById(
+          "hdwallet-output"
+        ).innerHTML = `Mnemonic: ${mnemonic}<br>
+                Derived Path: ${path}<br>
+                Public Key: ${Buffer.from(derived.publicKey).toString(
+                  "hex"
+                )}<br>
+                WIF: ${derived.wif}`;
+      }
+
+      function testHashing() {
+        const data = document.getElementById("hash-input").value;
+        const algorithm = document.getElementById("hash-algorithm").value;
+        const hash = SmartLedger.hash(data, algorithm);
+
+        document.getElementById("hash-output").innerHTML = `Input: ${data}<br>
+                Algorithm: ${algorithm}<br>
+                Hash: ${hash}`;
+      }
+
+      function testUUID() {
+        const domain = document.getElementById("domain").value;
+        const uuid = SmartLedger.generateUUID(domain);
+
+        document.getElementById(
+          "uuid-output"
+        ).innerHTML = `Domain: ${domain}<br>
+                Generated UUID: ${uuid}`;
+      }
+    </script>
+  </body>
+</html>
