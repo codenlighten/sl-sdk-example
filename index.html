@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SmartLedger SDK Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>SmartLedger SDK Demo</h1>
+    <p>This demo showcases all features of the SmartLedger SDK. Open the browser console for additional output.</p>
+
+    <div class="section">
+        <h2>1. BIP39 Mnemonic Operations</h2>
+        <button onclick="generateMnemonic()">Generate Mnemonic</button>
+        <button onclick="validateCurrentMnemonic()">Validate Current Mnemonic</button>
+        <button onclick="generateSeed()">Generate Seed</button>
+        <div id="mnemonicResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. HD Wallet Derivation</h2>
+        <button onclick="deriveStandardPaths()">Derive Standard Paths</button>
+        <button onclick="deriveSinglePath()">Derive Single Path</button>
+        <input type="text" id="derivationPath" placeholder="m/44'/236'/0'/0/0" value="m/44'/236'/0'/0/0">
+        <div id="derivationResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Cryptographic Operations</h2>
+        <input type="text" id="encryptInput" placeholder="Text to encrypt">
+        <input type="text" id="encryptKey" placeholder="Encryption key">
+        <button onclick="testEncryption()">Test Encryption</button>
+        <div id="encryptionResult" class="result"></div>
+
+        <input type="text" id="hashInput" placeholder="Text to hash">
+        <select id="hashAlgorithm">
+            <option value="SHA256">SHA256</option>
+            <option value="SHA512">SHA512</option>
+            <option value="MD5">MD5</option>
+        </select>
+        <button onclick="testHashing()">Test Hashing</button>
+        <div id="hashResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Shamir's Secret Sharing</h2>
+        <input type="text" id="secretInput" placeholder="Secret to split">
+        <input type="number" id="numShares" placeholder="Number of shares" value="5">
+        <input type="number" id="threshold" placeholder="Threshold" value="3">
+        <button onclick="testSecretSharing()">Split & Combine Secret</button>
+        <div id="secretResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>5. BSV Operations</h2>
+        <button onclick="generateKeyPair()">Generate Key Pair</button>
+        <button onclick="signMessage()">Sign Message</button>
+        <button onclick="verifySignature()">Verify Signature</button>
+        <div id="bsvResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>6. Storage Operations</h2>
+        <input type="text" id="storageKey" placeholder="Key ID">
+        <input type="text" id="storageValue" placeholder="Value to store">
+        <button onclick="testStorage()">Test Storage Operations</button>
+        <div id="storageResult" class="result"></div>
+    </div>
+
+    <div class="section">
+        <h2>7. Utility Functions</h2>
+        <input type="text" id="uuidInput" placeholder="Name for UUID generation">
+        <button onclick="generateUUID()">Generate UUID</button>
+        <div id="uuidResult" class="result"></div>
+
+        <input type="text" id="base64Input" placeholder="Text for Base64 encoding">
+        <button onclick="testBase64()">Test Base64</button>
+        <div id="base64Result" class="result"></div>
+    </div>
+
+    <script src="node_modules/smartledger-sdk/dist/smartledger.js"></script>
+    <script>
+        let currentMnemonic = null;
+        let currentKeyPair = null;
+        let currentSignature = null;
+
+        function showResult(elementId, result, isError = false) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = isError ? 
+                `<span class="error">Error: ${result}</span>` : 
+                `<span class="success">Success:</span>\n${JSON.stringify(result, null, 2)}`;
+        }
+
+        async function generateMnemonic() {
+            try {
+                currentMnemonic = SmartLedger.generateMnemonic();
+                showResult('mnemonicResult', { mnemonic: currentMnemonic });
+            } catch (error) {
+                showResult('mnemonicResult', error.message, true);
+            }
+        }
+
+        async function validateCurrentMnemonic() {
+            try {
+                if (!currentMnemonic) throw new Error('Generate a mnemonic first');
+                const isValid = SmartLedger.validateMnemonic(currentMnemonic);
+                showResult('mnemonicResult', { isValid });
+            } catch (error) {
+                showResult('mnemonicResult', error.message, true);
+            }
+        }
+
+        async function generateSeed() {
+            try {
+                if (!currentMnemonic) throw new Error('Generate a mnemonic first');
+                const seed = await SmartLedger.mnemonicToSeedHex(currentMnemonic);
+                showResult('mnemonicResult', { seed: seed.substring(0, 32) + '...' });
+            } catch (error) {
+                showResult('mnemonicResult', error.message, true);
+            }
+        }
+
+        async function deriveStandardPaths() {
+            try {
+                if (!currentMnemonic) throw new Error('Generate a mnemonic first');
+                const paths = await SmartLedger.deriveStandardPaths(currentMnemonic);
+                showResult('derivationResult', {
+                    totalPaths: paths.length,
+                    firstPath: paths[0],
+                    lastPath: paths[paths.length - 1]
+                });
+            } catch (error) {
+                showResult('derivationResult', error.message, true);
+            }
+        }
+
+        async function deriveSinglePath() {
+            try {
+                if (!currentMnemonic) throw new Error('Generate a mnemonic first');
+                const path = document.getElementById('derivationPath').value;
+                const derived = await SmartLedger.derivePath(currentMnemonic, path);
+                showResult('derivationResult', derived);
+            } catch (error) {
+                showResult('derivationResult', error.message, true);
+            }
+        }
+
+        async function testEncryption() {
+            try {
+                const text = document.getElementById('encryptInput').value;
+                const key = document.getElementById('encryptKey').value;
+                const encrypted = SmartLedger.encrypt(text, key);
+                const decrypted = SmartLedger.decrypt(encrypted, key);
+                showResult('encryptionResult', { original: text, encrypted, decrypted });
+            } catch (error) {
+                showResult('encryptionResult', error.message, true);
+            }
+        }
+
+        async function testHashing() {
+            try {
+                const text = document.getElementById('hashInput').value;
+                const algorithm = document.getElementById('hashAlgorithm').value;
+                const hash = SmartLedger.hash(text, algorithm);
+                showResult('hashResult', { input: text, algorithm, hash });
+            } catch (error) {
+                showResult('hashResult', error.message, true);
+            }
+        }
+
+        async function testSecretSharing() {
+            try {
+                const secret = document.getElementById('secretInput').value;
+                const numShares = parseInt(document.getElementById('numShares').value);
+                const threshold = parseInt(document.getElementById('threshold').value);
+                
+                const shares = SmartLedger.splitSecret(secret, numShares, threshold);
+                const reconstructed = SmartLedger.combineShares(shares.slice(0, threshold));
+                
+                showResult('secretResult', {
+                    original: secret,
+                    shares: shares.map(s => s.substring(0, 20) + '...'),
+                    reconstructed
+                });
+            } catch (error) {
+                showResult('secretResult', error.message, true);
+            }
+        }
+
+        async function generateKeyPair() {
+            try {
+                currentKeyPair = SmartLedger.generateKeyPair();
+                showResult('bsvResult', {
+                    privateKey: currentKeyPair.privateKey.toString(),
+                    publicKey: currentKeyPair.publicKey.toString()
+                });
+            } catch (error) {
+                showResult('bsvResult', error.message, true);
+            }
+        }
+
+        async function signMessage() {
+            try {
+                if (!currentKeyPair) throw new Error('Generate a key pair first');
+                const message = 'Hello SmartLedger!';
+                currentSignature = await SmartLedger.signMessage(
+                    message,
+                    currentKeyPair.privateKey.toString()
+                );
+                showResult('bsvResult', {
+                    message,
+                    signature: currentSignature
+                });
+            } catch (error) {
+                showResult('bsvResult', error.message, true);
+            }
+        }
+
+        async function verifySignature() {
+            try {
+                if (!currentKeyPair || !currentSignature) 
+                    throw new Error('Generate a key pair and sign a message first');
+                const message = 'Hello SmartLedger!';
+                const isValid = await SmartLedger.verifySignature(
+                    message,
+                    currentSignature,
+                    currentKeyPair.publicKey.toString()
+                );
+                showResult('bsvResult', { message, isValid });
+            } catch (error) {
+                showResult('bsvResult', error.message, true);
+            }
+        }
+
+        async function testStorage() {
+            try {
+                const keyId = document.getElementById('storageKey').value;
+                const value = document.getElementById('storageValue').value;
+                const storageKey = 'test-storage-key';
+
+                // Store
+                await SmartLedger.storeKey(keyId, value, { timestamp: Date.now() }, storageKey);
+                
+                // Retrieve
+                const retrieved = await SmartLedger.retrieveKey(keyId, storageKey);
+                
+                // List
+                const allKeys = await SmartLedger.listKeys();
+                
+                showResult('storageResult', {
+                    stored: value,
+                    retrieved,
+                    allKeys
+                });
+            } catch (error) {
+                showResult('storageResult', error.message, true);
+            }
+        }
+
+        async function generateUUID() {
+            try {
+                const name = document.getElementById('uuidInput').value;
+                const uuid = SmartLedger.generateUUID(name);
+                showResult('uuidResult', { name, uuid });
+            } catch (error) {
+                showResult('uuidResult', error.message, true);
+            }
+        }
+
+        async function testBase64() {
+            try {
+                const text = document.getElementById('base64Input').value;
+                const encoded = SmartLedger.base64Encode(text);
+                const decoded = SmartLedger.base64Decode(encoded);
+                showResult('base64Result', { original: text, encoded, decoded });
+            } catch (error) {
+                showResult('base64Result', error.message, true);
+            }
+        }
+    </script>
+</body>
+</html>
