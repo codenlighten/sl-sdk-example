@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BSV Transaction Creator with SmartLedger</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Light Theme (Default) */
+        --sl-bg: #ffffff;
+        --sl-container-bg: #f5f5f5;
+        --sl-text: #212121;
+        --sl-text-secondary: #757575;
+        --sl-primary: #0ab28a;
+        --sl-primary-hover: #089f7d;
+        --sl-warning: #ff5722;
+        --sl-warning-hover: #ff7043;
+        --sl-input-bg: #e0e0e0;
+        --sl-border: #cccccc;
+      }
+
+      /* Dark Theme */
+      body.dark-theme {
+        --sl-bg: #121212;
+        --sl-container-bg: #1e1e1e;
+        --sl-text: #e0e0e0;
+        --sl-text-secondary: #b0bec5;
+        --sl-primary: #0ab28a;
+        --sl-primary-hover: #089f7d;
+        --sl-warning: #ff5722;
+        --sl-warning-hover: #ff7043;
+        --sl-input-bg: #2a2a2a;
+        --sl-border: #333333;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        background: var(--sl-bg);
+        color: var(--sl-text);
+        line-height: 1.5;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 4rem 1rem 1rem;
+        transition: background-color 0.3s ease;
+      }
+
+      .container {
+        display: grid;
+        gap: 2rem;
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 2.5rem;
+        font-weight: 600;
+        background: linear-gradient(
+          135deg,
+          var(--sl-primary),
+          var(--sl-primary-hover)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 2rem;
+      }
+
+      h2 {
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--sl-text);
+        margin-bottom: 1rem;
+      }
+
+      .section {
+        background: var(--sl-container-bg);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s ease, background-color 0.3s ease;
+      }
+
+      .section:hover {
+        transform: translateY(-2px);
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        margin: 0.5rem 0;
+        border: 1px solid var(--sl-border);
+        border-radius: 0.5rem;
+        font-family: inherit;
+        font-size: 1rem;
+        transition: border-color 0.2s ease, background-color 0.3s ease;
+        background: var(--sl-input-bg);
+        color: var(--sl-text);
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--sl-primary);
+        box-shadow: 0 0 0 3px rgba(10, 178, 138, 0.1);
+      }
+
+      button {
+        width: 100%;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 0.5rem;
+        background: var(--sl-primary);
+        color: white;
+        font-weight: 500;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 1rem;
+      }
+
+      button:hover {
+        background: var(--sl-primary-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(10, 178, 138, 0.2);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      button.loading {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      button.loading::after {
+        content: "";
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        margin-left: 0.5rem;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      p.result {
+        background: var(--sl-input-bg);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+        font-size: 0.875rem;
+        color: var(--sl-text-secondary);
+        word-break: break-all;
+        border: 1px solid var(--sl-border);
+      }
+
+      .info-display {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: var(--sl-input-bg);
+        border-radius: 0.5rem;
+        border: 1px solid var(--sl-border);
+      }
+
+      .info-display div {
+        flex: 1;
+      }
+
+      .info-display p {
+        font-size: 0.875rem;
+        color: var(--sl-text-secondary);
+        margin-bottom: 0.25rem;
+      }
+
+      .info-display span {
+        font-weight: 500;
+        color: var(--sl-text);
+      }
+
+      .success-animation {
+        animation: success 0.3s ease;
+      }
+
+      @keyframes success {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 3rem;
+        padding: 1.5rem;
+        color: var(--sl-text-secondary);
+        font-size: 0.875rem;
+      }
+
+      footer a {
+        color: var(--sl-primary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      footer a:hover {
+        color: var(--sl-primary-hover);
+      }
+
+      /* Theme Toggle */
+      .theme-toggle {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        background: var(--sl-container-bg);
+        border: 1px solid var(--sl-border);
+        color: var(--sl-text);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 1000;
+      }
+
+      .theme-toggle:hover {
+        background: var(--sl-input-bg);
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 4rem 1rem 1rem;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .section {
+          padding: 1rem;
+        }
+
+        .info-display {
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .theme-toggle {
+          top: auto;
+          bottom: 1rem;
+          right: 1rem;
+        }
+      }
+    </style>
+    <!-- Load SmartLedger which exposes SmartLedger.bsv (bsv@1.5) and its Buffer -->
+    <script src="node_modules/smartledger-sdk/dist/smartledger.js"></script>
+  </head>
+  <body>
+    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+    <div class="container">
+      <h1>BSV Transaction Creator</h1>
+
+      <!-- Section 1: Load WIF, derive address, and display balance -->
+      <div class="section" id="wifSection">
+        <h2>Step 1: Load or Generate Your WIF</h2>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+          <input type="password" id="wif" placeholder="Enter your WIF" style="flex: 1;" />
+          <button id="generateWIF" style="width: auto; white-space: nowrap;">Generate New WIF</button>
+        </div>
+        <button id="loadWIF">Load WIF</button>
+        <div class="info-display">
+          <div>
+            <p>Your Address</p>
+            <span id="addressDisplay">-</span>
+          </div>
+          <div>
+            <p>Your Balance</p>
+            <span id="balanceDisplay">-</span> <span>satoshis</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Create an OP_RETURN Transaction -->
+      <div class="section" id="opReturnSection">
+        <h2>Step 2: Create an OP_RETURN Transaction</h2>
+        <textarea
+          id="opReturnData"
+          rows="4"
+          placeholder="Enter text/data to store in OP_RETURN"
+        ></textarea>
+        <button id="createOpReturnTx">Create & Broadcast OP_RETURN TX</button>
+        <p class="result">TXID: <span id="opReturnTxid">-</span></p>
+      </div>
+
+      <!-- Section 3: Send Satoshis to an Address -->
+      <div class="section" id="sendSection">
+        <h2>Step 3: Send Satoshis to an Address</h2>
+        <input type="text" id="destination" placeholder="Destination Address" />
+        <input
+          type="number"
+          id="amount"
+          placeholder="Amount in satoshis"
+          min="1"
+        />
+        <button id="sendSatoshis">Create & Broadcast Send TX</button>
+        <p class="result">TXID: <span id="sendTxid">-</span></p>
+      </div>
+
+      <!-- Section 4: Send Satoshis and Add an OP_RETURN Output -->
+      <div class="section" id="sendOpReturnSection">
+        <h2>Step 4: Send Satoshis with an OP_RETURN Output</h2>
+        <input
+          type="text"
+          id="destOpReturn"
+          placeholder="Destination Address"
+        />
+        <input
+          type="number"
+          id="amountOpReturn"
+          placeholder="Amount in satoshis"
+          min="1"
+        />
+        <textarea
+          id="opReturnSendData"
+          rows="3"
+          placeholder="Enter data to store in OP_RETURN"
+        ></textarea>
+        <button id="sendOpReturnTx">
+          Create & Broadcast TX with Send and OP_RETURN
+        </button>
+        <p class="result">TXID: <span id="sendOpReturnTxid">-</span></p>
+      </div>
+    </div>
+
+    <footer>
+      Another SmartLedger Solution •
+      <a href="https://smartledger.solutions" target="_blank"
+        >smartledger.solutions</a
+      >
+      • 2025
+    </footer>
+
+    <script>
+      // Use SmartLedger.bsv and its Buffer
+      const bsv = SmartLedger.bsv;
+      const Buffer = SmartLedger.bsv.deps.Buffer;
+
+      let privateKey, publicKey, address;
+
+      // Generate new WIF
+      document.getElementById("generateWIF").addEventListener("click", () => {
+        try {
+          // Generate a new private key
+          privateKey = bsv.PrivateKey.fromRandom();
+          const wif = privateKey.toWIF();
+          
+          // Display the WIF in the input field
+          document.getElementById("wif").value = wif;
+          
+          // Clear previous address and balance
+          document.getElementById("addressDisplay").innerText = "-";
+          document.getElementById("balanceDisplay").innerText = "-";
+          
+          // Show alert with important information
+          alert("A new WIF has been generated and filled in the input field.\n\nIMPORTANT: Please save this WIF securely. If you lose it, you will lose access to any funds sent to this address.\n\nClick 'Load WIF' to start using this address.");
+        } catch (error) {
+          console.error("Error generating WIF", error);
+          alert("Error generating WIF: " + error.message);
+        }
+      });
+
+      // Load WIF, derive keys, and display address and balance
+      document.getElementById("loadWIF").addEventListener("click", async () => {
+        const wifInput = document.getElementById("wif").value.trim();
+        if (!wifInput) {
+          alert("Please enter a WIF.");
+          return;
+        }
+        try {
+          privateKey = bsv.PrivateKey.fromWIF(wifInput);
+          publicKey = bsv.PublicKey.fromPrivateKey(privateKey);
+          address = bsv.Address.fromPublicKey(publicKey).toString();
+          document.getElementById("addressDisplay").innerText = address;
+          await updateBalance();
+        } catch (error) {
+          console.error(error);
+          alert("Invalid WIF.");
+        }
+      });
+
+      // Update balance using Whatsonchain API
+      async function updateBalance() {
+        if (!address) return;
+        try {
+          const res = await fetch(
+            `https://api.whatsonchain.com/v1/bsv/main/address/${address}/balance`
+          );
+          const data = await res.json();
+          const balance = data.confirmed + data.unconfirmed;
+          document.getElementById("balanceDisplay").innerText = balance;
+        } catch (error) {
+          console.error("Error fetching balance", error);
+          document.getElementById("balanceDisplay").innerText = "Error";
+        }
+      }
+
+      // Fetch UTXOs for the address from Whatsonchain
+      async function fetchUTXOs(addr) {
+        try {
+          const res = await fetch(
+            `https://api.whatsonchain.com/v1/bsv/main/address/${addr}/unspent`
+          );
+          const utxos = await res.json();
+          return utxos.map((utxo) => ({
+            txId: utxo.tx_hash,
+            outputIndex: utxo.tx_pos,
+            satoshis: utxo.value,
+            script: bsv.Script.buildPublicKeyHashOut(addr).toString(),
+          }));
+        } catch (error) {
+          console.error("Error fetching UTXOs", error);
+          return [];
+        }
+      }
+
+      // Broadcast a raw transaction via Whatsonchain API
+      async function broadcast(txHex) {
+        try {
+          const res = await fetch(
+            "https://api.whatsonchain.com/v1/bsv/main/tx/raw",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ txhex: txHex }),
+            }
+          );
+          const data = await res.json();
+          return data;
+        } catch (error) {
+          console.error("Error broadcasting transaction", error);
+          throw error;
+        }
+      }
+
+      // Create and broadcast an OP_RETURN transaction
+      document
+        .getElementById("createOpReturnTx")
+        .addEventListener("click", async () => {
+          if (!privateKey || !address) {
+            alert("Please load your WIF first.");
+            return;
+          }
+          const opReturnData = document.getElementById("opReturnData").value;
+          if (!opReturnData) {
+            alert("Please enter some data for OP_RETURN.");
+            return;
+          }
+          const utxos = await fetchUTXOs(address);
+          if (utxos.length === 0) {
+            alert("No UTXOs available. Please fund your address.");
+            return;
+          }
+          try {
+            const tx = new bsv.Transaction().from(utxos);
+
+            // Build an OP_RETURN output (0 satoshis) using Buffer
+            const dataBuffer = Buffer.from(opReturnData, "utf8");
+            const opReturnScript = bsv.Script.buildSafeDataOut([dataBuffer]);
+            tx.addOutput(
+              new bsv.Transaction.Output({
+                script: opReturnScript,
+                satoshis: 0,
+              })
+            );
+
+            // Set fee and add change output
+            tx.feePerKb(10); // ~10 sat/byte fee rate
+            tx.change(address);
+
+            // Sign the transaction and serialize it
+            tx.sign(privateKey);
+            const txHex = tx.toString();
+            console.log("OP_RETURN TX Hex:", txHex);
+
+            // Broadcast the transaction
+            const txid = await broadcast(txHex);
+            document.getElementById("opReturnTxid").innerText = txid;
+            alert("OP_RETURN Transaction broadcasted with TXID: " + txid);
+            await updateBalance();
+          } catch (error) {
+            console.error("Error creating OP_RETURN transaction", error);
+            alert("Error: " + error);
+          }
+        });
+
+      // Create and broadcast a transaction that sends satoshis
+      document
+        .getElementById("sendSatoshis")
+        .addEventListener("click", async () => {
+          if (!privateKey || !address) {
+            alert("Please load your WIF first.");
+            return;
+          }
+          const destination = document
+            .getElementById("destination")
+            .value.trim();
+          const amount = parseInt(
+            document.getElementById("amount").value.trim(),
+            10
+          );
+          if (!destination || isNaN(amount) || amount <= 0) {
+            alert("Please enter a valid destination and amount.");
+            return;
+          }
+          const utxos = await fetchUTXOs(address);
+          if (utxos.length === 0) {
+            alert("No UTXOs available. Please fund your address.");
+            return;
+          }
+          try {
+            const tx = new bsv.Transaction().from(utxos);
+            // Add an output to send the specified amount
+            tx.to(destination, amount);
+
+            // Set fee and add change output
+            tx.feePerKb(10);
+            tx.change(address);
+
+            // Sign and serialize the transaction
+            tx.sign(privateKey);
+            const txHex = tx.toString();
+            console.log("Send TX Hex:", txHex);
+
+            // Broadcast the transaction
+            const txid = await broadcast(txHex);
+            document.getElementById("sendTxid").innerText = txid;
+            alert("Send Transaction broadcasted with TXID: " + txid);
+            await updateBalance();
+          } catch (error) {
+            console.error("Error creating send transaction", error);
+            alert("Error: " + error);
+          }
+        });
+
+      // Create and broadcast a transaction that sends satoshis and adds an OP_RETURN output
+      document
+        .getElementById("sendOpReturnTx")
+        .addEventListener("click", async () => {
+          if (!privateKey || !address) {
+            alert("Please load your WIF first.");
+            return;
+          }
+          const destination = document
+            .getElementById("destOpReturn")
+            .value.trim();
+          const amount = parseInt(
+            document.getElementById("amountOpReturn").value.trim(),
+            10
+          );
+          const opReturnText =
+            document.getElementById("opReturnSendData").value;
+          if (!destination || isNaN(amount) || amount <= 0) {
+            alert("Please enter a valid destination and amount.");
+            return;
+          }
+          if (!opReturnText) {
+            alert("Please enter data for the OP_RETURN output.");
+            return;
+          }
+          const utxos = await fetchUTXOs(address);
+          if (utxos.length === 0) {
+            alert("No UTXOs available. Please fund your address.");
+            return;
+          }
+          try {
+            const tx = new bsv.Transaction().from(utxos);
+            // First output: send the specified amount to the destination
+            tx.to(destination, amount);
+
+            // Second output: add an OP_RETURN output using the provided data
+            const opReturnBuffer = Buffer.from(opReturnText, "utf8");
+            const opReturnScript = bsv.Script.buildSafeDataOut([
+              opReturnBuffer,
+            ]);
+            tx.addOutput(
+              new bsv.Transaction.Output({
+                script: opReturnScript,
+                satoshis: 0,
+              })
+            );
+
+            // Set fee and add change output
+            tx.feePerKb(10);
+            tx.change(address);
+
+            // Sign the transaction and serialize it
+            tx.sign(privateKey);
+            const txHex = tx.toString();
+            console.log("Send+OP_RETURN TX Hex:", txHex);
+
+            // Broadcast the transaction
+            const txid = await broadcast(txHex);
+            document.getElementById("sendOpReturnTxid").innerText = txid;
+            alert(
+              "Transaction with Send and OP_RETURN broadcasted with TXID: " +
+                txid
+            );
+            await updateBalance();
+          } catch (error) {
+            console.error("Error creating send+OP_RETURN transaction", error);
+            alert("Error: " + error);
+          }
+        });
+
+      // Theme Toggle
+      function toggleTheme() {
+        document.body.classList.toggle("dark-theme");
+        localStorage.setItem(
+          "theme",
+          document.body.classList.contains("dark-theme") ? "dark" : "light"
+        );
+      }
+
+      // Load saved theme preference
+      if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark-theme");
+      }
+    </script>
+  </body>
+</html>
